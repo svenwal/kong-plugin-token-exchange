@@ -1,6 +1,7 @@
 local typedefs = require "kong.db.schema.typedefs"
 
 local PLUGIN_NAME = "token-exchange"
+local redis = require "kong.enterprise_edition.redis"
 
 local schema = {
   name = PLUGIN_NAME,
@@ -52,6 +53,7 @@ local schema = {
               type = "string",
 	      required = false,
             }},
+	  { redis = redis.config_schema }, -- redis schema is provided by Kong Enterprise
         },
         entity_checks = {
         },
