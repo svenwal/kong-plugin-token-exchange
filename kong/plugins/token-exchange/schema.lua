@@ -43,6 +43,15 @@ local schema = {
               default = 300,
               required = true
             }},
+	  { cache_invalidation_enabled = {
+              type = "boolean",
+	      required = false,
+	      default = false
+            }},
+	  { cache_invalidation_secret = {
+              type = "string",
+	      required = false,
+            }},
         },
         entity_checks = {
         },

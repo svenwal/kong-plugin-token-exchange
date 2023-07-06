@@ -4,7 +4,24 @@ local plugin = {
   }
   
 function plugin:access(plugin_conf)
-  -- >>>>>> checking if we got a token at all
+  -- cache invalidation handling
+  if kong.request.get_header("Invalidate-Cache") ~= nil and plugin_conf.cache_invalidation_enabled then
+    if plugin_conf.cache_invalidation_secret == nil then
+      kong.log.error("Cache invalidation enabled without secret set")
+      kong.response.exit(500)
+    end
+    if kong.request.get_header("invalidation-secret") == nil then
+      kong.response.exit(401, 'Authentication required')
+    end
+    if kong.request.get_header("invalidation-secret") ~= plugin_conf.cache_invalidation_secret then
+      kong.response.exit(403, 'Invalid credentials')
+    end
+    local token_cache_key = "token_exchange_" .. kong.request.get_header("Invalidate-Cache")
+    kong.cache:invalidate(token_cache_key)
+    kong.response.exit(204)
+  end
+
+  -- token exchange handling
   local token = kong.request.get_header("Authorization")
   if token == nil then
     kong.log.info("No token found")
@@ -23,7 +40,7 @@ function plugin:access(plugin_conf)
   local decoded_token, err = kong.cache:get(token_cache_key, opts, exchange_token, plugin_conf, token)
   if err then
     kong.log.info(err)
-    return kong.response.exit(401, 'Invalid credentials')
+    kong.response.exit(403, 'Invalid credentials')
   end
 
   kong.service.request.set_header("Authorization", "Bearer " .. decoded_token)
