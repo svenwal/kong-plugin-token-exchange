@@ -17,6 +17,20 @@ function plugin:access(plugin_conf)
     token = token:sub(8)
   end
 
+  local token_cache_key = "token_exchange_" .. token
+  local opts = { ttl = plugin_conf.cache_ttl }
+
+  local decoded_token, err = kong.cache:get(token_cache_key, opts, exchange_token, plugin_conf, token)
+  if err then
+    kong.log.info(err)
+    return kong.response.exit(401, 'Invalid credentials')
+  end
+
+  kong.service.request.set_header("Authorization", "Bearer " .. decoded_token)
+
+end
+
+function exchange_token(plugin_conf, token)
   local http = require "resty.http"
   local httpc = http.new()
 
@@ -31,29 +45,24 @@ function plugin:access(plugin_conf)
       keepalive_timeout = 60,
       keepalive_pool = 10
     })
-    if err then
-      return nil, err
-    end
-    if not res.status == 200 then
-      return nil, "Invalid exchange status code received: " .. res.status
-    end
-
-    local cjson = require("cjson.safe").new()
-    local serialized_content, err = cjson.decode(res.body)
-    if not serialized_content then
-      kong.log.debug("Exchange endpoint has not returned parsable JSON")
-      return kong.response.exit(401, 'Invalid credentials')
-    end
-
-    if not serialized_content.access_token then
-      kong.log.debug("We have not gotten an exchanged token")
-      return kong.response.exit(401, 'Invalid credentials')
-    end
-
-    kong.service.request.set_header("Authorization", "Bearer " .. serialized_content.access_token)
-
-
-    -- >>>>>> checking if client token is cached - if not execute validate_apikey to fetch it
+  if err then
+    return nil, err
+  end
+  if not res.status == 200 then
+    return nil, "Invalid exchange status code received: " .. res.status
   end
 
-  return plugin
+  local cjson = require("cjson.safe").new()
+  local serialized_content, err = cjson.decode(res.body)
+  if not serialized_content then
+    return nil,"Exchange endpoint has not returned parsable JSON"
+  end
+
+  if not serialized_content.access_token then
+    return nil, "We have not gotten an exchanged token"
+  end
+
+  return serialized_content.access_token, nil
+end
+
+return plugin
