@@ -5,7 +5,7 @@ local plugin = {
   
 function plugin:access(plugin_conf)
   -- cache invalidation handling
-  if kong.request.get_header("Invalidate-Cache") ~= nil and plugin_conf.cache_invalidation_enabled then
+  if kong.request.get_method() == "DELETE" and kong.request.get_header("Invalidate-Cache") ~= nil and plugin_conf.cache_invalidation_enabled then
     if plugin_conf.cache_invalidation_secret == nil then
       kong.log.error("Cache invalidation enabled without secret set")
       kong.response.exit(500)
