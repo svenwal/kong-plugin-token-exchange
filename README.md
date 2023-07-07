@@ -1,18 +1,18 @@
 # Kong plugin for token exchange
 
-## About
+# About
 
-This Kong 🦍 plugin receives and opaque / encrypted token and will exchange it based on [RFC-8693](https://www.rfc-editor.org/rfc/rfc8693) with a JWT from the IdP.
+This Kong 🦍 plugin receives an opaque / encrypted token and will exchange it based on [RFC-8693](https://www.rfc-editor.org/rfc/rfc8693) with a JWT from the IdP.
 
 Exchanged tokens will be cached for a configurable amount of time and the cache can be invalidated per token at any time.
 
-This plugin is only focussing on the token exchange - for validating the token and enforcing claims have the OpenID Connect plugin also configured on the same call (this plugin injects the JWT into the request authorization header).
+This plugin is only focussing on the token exchange - for validating the token and enforcing claims have the [OpenID Connect plugin](https://docs.konghq.com/hub/kong-inc/openid-connect/) also configured on the same call (this plugin injects the JWT into the request authorization header).
 
 ## Configuration parameters token exchange
 
 |FORM PARAMETER|DEFAULT|DESCRIPTION|
 |:----|:------|:------|
-|config.cache_ttl|300|Time in seconds we cache the client token|
+|config.cache_ttl|300|Time in seconds we cache the token exchange|
 |config.client_id||Client ID used by Kong to authenticate against the IdP token-endpoint (*referencable*)|
 |config.client_secret||Client secret used by Kong to authenticate against the IdP token-endpoint (*referencable*)|
 |config.exchange_endpoint_url||The token exchange endpoint of the IdP|
@@ -24,7 +24,7 @@ This plugin is only focussing on the token exchange - for validating the token a
 
 This plugin provides an API to invalidate the cache for a given token. The API is protected by a secret that can be configured in the plugin. It is a `DELETE` request with parameters sent as headers.
 
-IMPORTANT: this API should not be enabled on public facing endpoints. It is protected by a shared secrets.
+IMPORTANT: this API should not be enabled on public facing endpoints. It is itself protected by a shared secret.
 
 Example call to invalidate the cache for a given token:
 
