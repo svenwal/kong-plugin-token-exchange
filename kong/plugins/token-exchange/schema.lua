@@ -51,6 +51,7 @@ local schema = {
 	  { cache_invalidation_secret = {
               type = "string",
 	      required = false,
+	      referenceable = true,
             }},
         },
         entity_checks = {
