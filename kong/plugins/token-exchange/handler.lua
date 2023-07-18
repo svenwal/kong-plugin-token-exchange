@@ -51,6 +51,7 @@ function exchange_token(plugin_conf, token)
   local http = require "resty.http"
   local httpc = http.new()
 
+
   local res, err = httpc:request_uri(plugin_conf.exchange_endpoint_url, {
     method = "POST",
       headers = {
@@ -72,11 +73,15 @@ function exchange_token(plugin_conf, token)
   local cjson = require("cjson.safe").new()
   local serialized_content, err = cjson.decode(res.body)
   if not serialized_content then
-    return nil,"Exchange endpoint has not returned parsable JSON"
+    return nil,"Exchange endpoint has not returned parsable JSON - we got " .. res.body
   end
 
   if not serialized_content.access_token then
-    return nil, "We have not gotten an exchanged token"
+    if not serialized_content.error then
+      return nil, "We have not gotten an exchanged token -  we got " .. res.body
+    else
+      return nil, "We have not gotten an exchanged token -  error message from token exchange endpoint: " .. serialized_content.error
+    end
   end
 
   return serialized_content.access_token, nil
